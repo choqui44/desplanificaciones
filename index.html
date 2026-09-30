@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Desplanificación – hoja de ruta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Versión con estilos (colores en el Excel descargado). Si no carga, se usa la de arriba. -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<style>
+:root{
+  --bg:#EDF1F7; --panel:#FFFFFF; --ink:#16233A; --muted:#62708A; --line:#DCE3EE; --row:#F6F8FC;
+  --navy:#13294B; --navy2:#1E4A80; --amber:#F2A900; --amber-soft:#FFF4D6; --teal:#0E9F8E; --teal-soft:#DDF5F1;
+  --coral:#E4572E; --focus:#1E6FD9; --shadow:0 6px 24px rgba(19,41,75,.10);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1726; --panel:#18233A; --ink:#E8EEF8; --muted:#9AA8C0; --line:#2A3A57; --row:#1C2943;
+    --amber-soft:#3A2F10; --teal-soft:#113A36; --shadow:0 6px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1726; --panel:#18233A; --ink:#E8EEF8; --muted:#9AA8C0; --line:#2A3A57; --row:#1C2943;
+  --amber-soft:#3A2F10; --teal-soft:#113A36; --shadow:0 6px 24px rgba(0,0,0,.35);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Source Sans 3",Calibri,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.4}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.hidden{display:none!important}
+
+/* ---------- Cabecera ---------- */
+.hero{background:linear-gradient(120deg,var(--navy) 0%,var(--navy2) 70%,#2A5F9E 100%);color:#fff;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-80px;top:-120px;width:340px;height:340px;border-radius:50%;
+  background:radial-gradient(circle,rgba(242,169,0,.35),rgba(242,169,0,0) 70%);pointer-events:none}
+.hero-in{max-width:1320px;margin:0 auto;padding:22px 24px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:14px 24px;position:relative;z-index:1}
+.brand{display:flex;align-items:center;gap:14px;flex:1;min-width:260px}
+.logo{width:46px;height:46px;border-radius:12px;background:var(--amber);display:grid;place-items:center;font-size:24px;flex:none;box-shadow:0 4px 14px rgba(242,169,0,.4)}
+.brand h1{margin:0;font-family:Outfit,sans-serif;font-weight:800;font-size:1.6rem;letter-spacing:-.01em}
+#fileInfo{margin:2px 0 0;color:#C9D6EA;font-size:.92rem}
+.btn-import{background:var(--amber);color:var(--navy);border:0;border-radius:10px;padding:11px 20px;font-weight:700;cursor:pointer;
+  font-family:Outfit,sans-serif;font-size:1rem;display:flex;gap:8px;align-items:center;box-shadow:0 4px 14px rgba(0,0,0,.2);transition:transform .15s}
+.btn-import:hover{transform:translateY(-1px)}
+.btn-import:active{transform:translateY(0)}
+
+.stats{max-width:1320px;margin:0 auto;padding:0 24px 22px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;position:relative;z-index:1}
+.stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 16px;display:flex;align-items:baseline;gap:10px}
+.stat b{font-family:Outfit,sans-serif;font-size:1.7rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.stat span{color:#C9D6EA;font-size:.9rem}
+.stat.c1 b{color:#7FE3D6}.stat.c2 b{color:#9CC7FF}.stat.c3 b{color:var(--amber)}
+
+/* ---------- Layout ---------- */
+main{display:grid;grid-template-columns:minmax(290px,370px) 1fr;gap:22px;padding:22px 24px 40px;max-width:1320px;margin:0 auto}
+.card{background:var(--panel);border-radius:14px;box-shadow:var(--shadow);border:1px solid var(--line)}
+
+/* ---------- Selector ---------- */
+.picker{display:flex;flex-direction:column;max-height:calc(100vh - 40px);position:sticky;top:16px;overflow:hidden}
+.picker-top{padding:16px;display:grid;gap:10px;border-bottom:1px solid var(--line)}
+.picker-top h2{margin:0;font-family:Outfit,sans-serif;font-size:1.1rem;font-weight:700}
+.field{width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:9px;background:var(--row);transition:border-color .15s}
+.field:focus{border-color:var(--focus);outline:none;background:var(--panel)}
+textarea.field{resize:vertical;min-height:58px}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip-btn{border:0;border-radius:999px;padding:6px 12px;font-weight:600;font-size:.85rem;cursor:pointer;transition:filter .15s}
+.chip-btn:hover{filter:brightness(.95)}
+.chip-btn:disabled{opacity:.4;cursor:not-allowed}
+.cb-amber{background:var(--amber-soft);color:#8A5A00}
+.cb-teal{background:var(--teal-soft);color:#0A6E63}
+.cb-coral{background:#FDE6DF;color:#A8381A}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .cb-amber{color:#FFD066}:root:not([data-theme="light"]) .cb-teal{color:#7FE3D6}:root:not([data-theme="light"]) .cb-coral{background:#41201A;color:#FFB39E}}
+:root[data-theme="dark"] .cb-amber{color:#FFD066}:root[data-theme="dark"] .cb-teal{color:#7FE3D6}:root[data-theme="dark"] .cb-coral{background:#41201A;color:#FFB39E}
+#pasteMsg{font-size:.84rem;color:var(--muted);margin:0;min-height:1em}
+#count{font-size:.85rem;color:var(--muted)}
+.progress{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--teal),var(--amber));transition:width .3s}
+
+#clientList{overflow:auto;flex:1;min-height:220px}
+.cli{display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;align-items:center;padding:9px 16px;border-bottom:1px solid var(--line);
+  cursor:pointer;position:relative;transition:background .15s}
+.cli::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:transparent;transition:background .15s}
+.cli:hover{background:var(--row)}
+.cli.on{background:var(--teal-soft)}
+.cli.on::before{background:var(--teal)}
+.cli input{width:17px;height:17px;accent-color:var(--teal);grid-row:span 2}
+.cli b{font-variant-numeric:tabular-nums;font-size:.95rem}
+.cli span{grid-column:2/-1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:.88rem}
+.badge{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:99px;color:#fff;letter-spacing:.02em}
+
+/* ---------- Salida ---------- */
+.out{min-width:0;display:grid;gap:18px;align-content:start}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end}
+.toolbar p{margin:0;flex:1;min-width:200px;color:var(--muted)}
+.act{border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;
+  font-family:Outfit,sans-serif;transition:transform .15s,filter .15s}
+.act:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.06)}
+.act:disabled{opacity:.4;cursor:not-allowed}
+.act-copy{background:var(--navy);color:#fff}
+.act-xls{background:#217346;color:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .act-copy{background:#2F64A8}}
+:root[data-theme="dark"] .act-copy{background:#2F64A8}
+
+.tcard{overflow:hidden}
+.tcard-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.tcard-head h3{margin:0;font-family:Outfit,sans-serif;font-size:1.05rem;font-weight:700}
+.dot{width:10px;height:10px;border-radius:50%}
+.tcard-head small{margin-left:auto;color:var(--muted);font-size:.85rem}
+.twrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th{background:var(--navy);color:#fff;text-align:left;font-weight:700;padding:9px 16px;white-space:nowrap;font-family:Outfit,sans-serif;font-size:.92rem;letter-spacing:.01em}
+td{padding:8px 16px;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody tr:nth-child(even) td{background:var(--row)}
+tbody tr:hover td{background:var(--amber-soft)}
+td.code{font-weight:700;font-variant-numeric:tabular-nums;color:var(--navy2)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) td.code{color:#9CC7FF}}
+:root[data-theme="dark"] td.code{color:#9CC7FF}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+th.num{text-align:right}
+td.qty{font-weight:700}
+tr.total td{background:var(--amber)!important;color:var(--navy);font-weight:800;font-family:Outfit,sans-serif;font-size:1.02rem;border:0}
+tr.new td{animation:flash .9s ease-out}
+@keyframes flash{from{background:var(--teal-soft)}}
+@media (prefers-reduced-motion:reduce){tr.new td{animation:none}.progress i,.btn-import,.act{transition:none}}
+
+.empty{padding:60px 24px;text-align:center}
+.empty .big{font-size:44px;margin-bottom:8px}
+.empty strong{display:block;font-family:Outfit,sans-serif;font-size:1.2rem;margin-bottom:6px}
+.empty p{margin:0;color:var(--muted)}
+
+/* ---------- Selector de vista ---------- */
+.viewsw{display:flex;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:3px}
+.viewsw button{border:0;background:transparent;color:#DCE6F5;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:700;
+  font-family:Outfit,sans-serif;display:flex;gap:6px;align-items:center;transition:background .15s,color .15s}
+.viewsw button[aria-pressed="true"]{background:#fff;color:var(--navy)}
+.tabbar{display:none}
+
+/* ---------- Vista celular ---------- */
+body.view-mobile #toast{bottom:calc(80px + env(safe-area-inset-bottom,0px))}
+body.view-mobile{font-size:14.5px;padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))}
+body.view-mobile .hero-in{padding:14px 14px 12px;gap:10px}
+body.view-mobile .brand{min-width:0;flex:1 1 100%}
+body.view-mobile .logo{width:38px;height:38px;font-size:20px;border-radius:10px}
+body.view-mobile .brand h1{font-size:1.3rem}
+body.view-mobile #fileInfo{font-size:.82rem}
+body.view-mobile .btn-import{flex:1;justify-content:center;padding:10px 12px}
+body.view-mobile .viewsw button{padding:8px 10px}
+body.view-mobile .viewsw .lbl{display:none}
+body.view-mobile .stats{padding:0 14px 14px;gap:8px}
+body.view-mobile .stat{flex-direction:column;align-items:flex-start;gap:2px;padding:9px 10px}
+body.view-mobile .stat b{font-size:1.35rem}
+body.view-mobile .stat span{font-size:.75rem;line-height:1.2}
+body.view-mobile main{grid-template-columns:1fr;padding:12px;gap:12px}
+body.view-mobile .picker{position:static;max-height:none}
+body.view-mobile #clientList{max-height:none;overflow:visible}
+body.view-mobile .cli{padding:11px 14px}
+body.view-mobile .cli input{width:20px;height:20px}
+body.view-mobile .toolbar{justify-content:stretch}
+body.view-mobile .toolbar p{flex:1 1 100%}
+body.view-mobile .act{flex:1;justify-content:center}
+body.view-mobile .tcard-head{padding:12px 14px}
+body.view-mobile th,body.view-mobile td{padding:7px 10px;font-size:.88rem}
+body.view-mobile #tMat td:nth-child(2),body.view-mobile #tClientes td:nth-child(2){white-space:normal;min-width:150px}
+body.view-mobile .pane:not(.active){display:none}
+body.view-mobile .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--panel);
+  border-top:1px solid var(--line);box-shadow:0 -4px 18px rgba(19,41,75,.12);padding:6px 10px calc(6px + env(safe-area-inset-bottom,0px));gap:8px}
+.tabbar button{flex:1;border:0;background:transparent;border-radius:10px;padding:9px 6px;font-weight:700;font-family:Outfit,sans-serif;
+  color:var(--muted);cursor:pointer;display:flex;gap:6px;justify-content:center;align-items:center}
+.tabbar button[aria-selected="true"]{background:var(--teal-soft);color:var(--teal)}
+.tabbar .pill{background:var(--amber);color:var(--navy);border-radius:99px;padding:0 7px;font-size:.78rem;min-width:20px}
+
+/* ---------- Vista PC ---------- */
+body.view-pc main{grid-template-columns:minmax(290px,370px) minmax(0,1fr)}
+
+#toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));z-index:30;transform:translate(-50%,20px);
+  background:var(--teal);color:#fff;padding:11px 20px;border-radius:10px;font-weight:600;box-shadow:var(--shadow);
+  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.err{background:var(--coral)}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-in">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">🚚</div>
+      <div>
+        <h1>Desplanificación</h1>
+        <p id="fileInfo">Importa la hoja de ruta en Excel para empezar.</p>
+      </div>
+    </div>
+    <input type="file" id="file" accept=".xlsx,.xls,.xlsm" class="hidden">
+    <div class="viewsw" role="group" aria-label="Formato de vista">
+      <button id="vPc" aria-pressed="false" title="Vista para PC"><span aria-hidden="true">💻</span><span class="lbl">PC</span></button>
+      <button id="vMob" aria-pressed="false" title="Vista para celular"><span aria-hidden="true">📱</span><span class="lbl">Celular</span></button>
+    </div>
+    <button class="btn-import" id="btnImport"><span aria-hidden="true">📥</span> Importar Excel</button>
+  </div>
+  <div class="stats">
+    <div class="stat c1"><b id="sCli">0</b><span>clientes marcados</span></div>
+    <div class="stat c2"><b id="sMat">0</b><span>materiales</span></div>
+    <div class="stat c3"><b id="sCj">0</b><span>cajas a desplanificar</span></div>
+  </div>
+</header>
+
+<main>
+  <section class="card picker pane active" id="paneSel" aria-label="Selección de clientes">
+    <div class="picker-top">
+      <h2>Clientes a desplanificar</h2>
+      <input class="field" type="search" id="search" placeholder="🔎  Buscar por código o nombre" disabled>
+      <select class="field" id="route" disabled><option value="">Todas las rutas</option></select>
+      <textarea class="field" id="paste" placeholder="Pega aquí varios códigos (uno por línea o separados por comas)" disabled></textarea>
+      <div class="row">
+        <button class="chip-btn cb-amber" id="btnPaste" disabled>Marcar pegados</button>
+        <button class="chip-btn cb-teal" id="btnAll" disabled>Marcar visibles</button>
+        <button class="chip-btn cb-coral" id="btnNone" disabled>Desmarcar todo</button>
+      </div>
+      <p id="pasteMsg"></p>
+      <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+      <span id="count">Sin archivo cargado</span>
+    </div>
+    <div id="clientList" role="list"></div>
+  </section>
+
+  <section class="out pane" id="paneOut">
+    <div class="toolbar">
+      <p id="summary">Marca clientes en la lista para armar las tablas.</p>
+      <button class="act act-copy" id="btnCopy" disabled><span aria-hidden="true">📋</span> Copiar tablas</button>
+      <button class="act act-xls" id="btnXlsx" disabled><span aria-hidden="true">⬇️</span> Descargar Excel</button>
+    </div>
+
+    <div class="card empty" id="empty">
+      <div class="big" aria-hidden="true">📦</div>
+      <strong>Aún no hay clientes seleccionados</strong>
+      <p>Importa el Excel y marca los códigos que vas a desplanificar.</p>
+    </div>
+
+    <div id="tables" class="hidden" style="display:grid;gap:18px">
+      <div class="card tcard">
+        <div class="tcard-head"><span class="dot" style="background:var(--teal)"></span><h3>Clientes</h3><small id="hCli"></small></div>
+        <div class="twrap"><table id="tClientes"><thead><tr><th>IDCli</th><th>Cliente</th><th>Ruta</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="card tcard">
+        <div class="tcard-head"><span class="dot" style="background:var(--amber)"></span><h3>Materiales</h3><small id="hMat"></small></div>
+        <div class="twrap"><table id="tMat"><thead><tr><th>IDMat</th><th>Material</th><th class="num">Suma de Cjas</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </section>
+</main>
+<nav class="tabbar" role="tablist" aria-label="Secciones">
+  <button role="tab" id="tabSel" aria-selected="true"><span aria-hidden="true">👥</span> Clientes <span class="pill" id="pSel">0</span></button>
+  <button role="tab" id="tabOut" aria-selected="false"><span aria-hidden="true">📊</span> Tablas <span class="pill" id="pCj">0</span></button>
+</nav>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+// ---------- Estado ----------
+let clients = new Map();   // id -> {id, name, route, items:[{mat, desc, cjas}]}
+let selected = new Set();
+let fechaPla = '';
+let prevMats = new Set(), prevCli = new Set();
+
+const $ = id => document.getElementById(id);
+const norm = v => (v === null || v === undefined) ? '' : String(v).trim();
+const collator = new Intl.Collator('es', {sensitivity:'base'});
+
+// ---------- Lectura del Excel ----------
+function parseRows(rows){
+  let h = rows.findIndex(r => r && r.some(c => norm(c).toLowerCase() === 'idcli'));
+  if (h < 0) throw new Error('No se encontró la columna "IDCli" en el Excel.');
+  const head = rows[h].map(c => norm(c).toLowerCase());
+  const col = (...names) => head.findIndex(x => names.includes(x));
+  const cRuta = col('ruta'), cCli = col('idcli'), cNom = col('nombre cli','cliente','nombre cliente'),
+        cMat = col('idmat'), cDesc = col('material'), cCj = col('cjas','cajas','suma de cjas');
+  if ([cCli,cNom,cMat,cDesc,cCj].some(i => i < 0))
+    throw new Error('Faltan columnas. Se esperan: IDCli, Nombre Cli, IDMat, Material, Cjas.');
+
+  for (let i=0;i<h;i++){
+    const r = rows[i]||[];
+    if (norm(r[0]).toLowerCase()==='fechapla' && r[1]!=null){
+      fechaPla = r[1] instanceof Date ? r[1].toLocaleDateString('es-PE') : norm(r[1]);
+    }
+  }
+  const map = new Map();
+  let ruta = '', cli = '', nom = '';
+  for (let i=h+1;i<rows.length;i++){
+    const r = rows[i]; if (!r) continue;
+    const vRuta = cRuta>=0 ? norm(r[cRuta]) : '', vCli = norm(r[cCli]), vNom = norm(r[cNom]);
+    if (/^total/i.test(vRuta) || /^total/i.test(vCli)) continue;
+    if (vRuta) ruta = vRuta;
+    if (vCli){ cli = vCli; nom = vNom || nom; }
+    const mat = norm(r[cMat]); if (!mat || !cli) continue;
+    const cj = Number(r[cCj]) || 0;
+    if (!map.has(cli)) map.set(cli, {id:cli, name:nom, route:ruta, items:[]});
+    map.get(cli).items.push({mat, desc:norm(r[cDesc]), cjas:cj});
+  }
+  if (!map.size) throw new Error('No se encontraron clientes con materiales en el archivo.');
+  return map;
+}
+
+$('btnImport').onclick = () => $('file').click();
+$('file').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try{
+    if (typeof XLSX === 'undefined') throw new Error('No se pudo cargar el lector de Excel. Revisa tu conexión y recarga la página.');
+    const wb = XLSX.read(await f.arrayBuffer(), {type:'array', cellDates:true});
+    let rows = null;
+    for (const n of wb.SheetNames){
+      const r = XLSX.utils.sheet_to_json(wb.Sheets[n], {header:1, raw:true, defval:null});
+      if (r.some(x => x && x.some(c => norm(c).toLowerCase()==='idcli'))){ rows = r; break; }
+    }
+    if (!rows) throw new Error('No se encontró la columna "IDCli" en ninguna hoja.');
+    fechaPla = '';
+    clients = parseRows(rows);
+    selected.clear(); prevMats.clear(); prevCli.clear();
+    fillRoutes();
+    ['search','route','paste','btnPaste','btnAll','btnNone'].forEach(id => $(id).disabled = false);
+    $('fileInfo').textContent = `${f.name} · ${clients.size} clientes · ${routeColors.size} rutas` + (fechaPla ? ` · Fecha planificada ${fechaPla}` : '');
+    $('pasteMsg').textContent = '';
+    renderList(); renderTables();
+    toast('Excel importado correctamente');
+  }catch(err){
+    $('fileInfo').textContent = 'Error: ' + err.message;
+    toast(err.message, true);
+  }
+  e.target.value = '';
+};
+
+// ---------- Colores por ruta ----------
+const PALETTE = ['#0E9F8E','#1E6FD9','#E4572E','#8E44AD','#D98E04','#2E8B57','#C2185B','#00838F','#5D4037','#3949AB','#7CB342','#F4511E'];
+let routeColors = new Map();
+function fillRoutes(){
+  const routes = [...new Set([...clients.values()].map(c => c.route).filter(Boolean))].sort(collator.compare);
+  routeColors = new Map(routes.map((r,i) => [r, PALETTE[i % PALETTE.length]]));
+  $('route').innerHTML = '<option value="">Todas las rutas</option>' +
+    routes.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
+}
+const badge = r => r ? `<span class="badge" style="background:${routeColors.get(r)||'#62708A'}">${esc(r)}</span>` : '';
+
+// ---------- Lista de clientes ----------
+function visibleClients(){
+  const q = $('search').value.trim().toLowerCase();
+  const rt = $('route').value;
+  return [...clients.values()].filter(c =>
+    (!rt || c.route === rt) && (!q || c.id.toLowerCase().includes(q) || c.name.toLowerCase().includes(q))
+  ).sort((a,b) => collator.compare(a.id,b.id));
+}
+function updateCount(list){
+  list = list || visibleClients();
+  $('count').textContent = `${list.length} visibles · ${selected.size} marcados de ${clients.size}`;
+  $('bar').style.width = clients.size ? (selected.size / clients.size * 100) + '%' : '0';
+}
+function renderList(){
+  const list = visibleClients();
+  $('clientList').innerHTML = list.map(c => `
+    <label class="cli${selected.has(c.id)?' on':''}" role="listitem">
+      <input type="checkbox" data-id="${esc(c.id)}"${selected.has(c.id)?' checked':''}>
+      <b>${esc(c.id)}</b>${badge(c.route)}
+      <span title="${esc(c.name)}">${esc(c.name)}</span>
+    </label>`).join('') || '<div class="empty"><p>Ningún cliente coincide con el filtro.</p></div>';
+  updateCount(list);
+}
+$('clientList').addEventListener('change', e => {
+  const id = e.target.dataset.id; if (!id) return;
+  e.target.checked ? selected.add(id) : selected.delete(id);
+  e.target.closest('.cli').classList.toggle('on', e.target.checked);
+  updateCount(); renderTables();
+});
+$('search').oninput = renderList;
+$('route').onchange = renderList;
+$('btnAll').onclick = () => { visibleClients().forEach(c => selected.add(c.id)); renderList(); renderTables(); };
+$('btnNone').onclick = () => { selected.clear(); renderList(); renderTables(); };
+$('btnPaste').onclick = () => {
+  const codes = $('paste').value.split(/[\s,;]+/).map(s => s.trim()).filter(Boolean);
+  const missing = []; let added = 0;
+  codes.forEach(c => { if (clients.has(c)){ if(!selected.has(c)) added++; selected.add(c); } else missing.push(c); });
+  $('pasteMsg').textContent = `✅ ${added} marcados` + (missing.length ? ` · ⚠️ No están en el Excel: ${missing.join(', ')}` : '');
+  renderList(); renderTables();
+};
+
+// ---------- Tablas de salida ----------
+let lastCli = [], lastMat = [], lastTotal = 0;
+function renderTables(){
+  const sel = [...selected].map(id => clients.get(id)).filter(Boolean).sort((a,b) => collator.compare(a.id,b.id));
+  const has = sel.length > 0;
+  $('empty').classList.toggle('hidden', has);
+  $('tables').classList.toggle('hidden', !has);
+  $('btnCopy').disabled = $('btnXlsx').disabled = !has;
+
+  const agg = new Map();
+  sel.forEach(c => c.items.forEach(it => {
+    if (!agg.has(it.mat)) agg.set(it.mat, {mat:it.mat, desc:it.desc, cjas:0});
+    agg.get(it.mat).cjas += it.cjas;
+  }));
+  const mats = [...agg.values()].sort((a,b) => a.mat.localeCompare(b.mat));
+  const total = mats.reduce((s,m) => s + m.cjas, 0);
+
+  $('pSel').textContent = sel.length; $('pCj').textContent = fmt(total);
+  animateNum('sCli', sel.length); animateNum('sMat', mats.length); animateNum('sCj', total);
+  lastCli = sel; lastMat = mats; lastTotal = total;
+  if (!has){ $('summary').textContent = 'Marca clientes en la lista para armar las tablas.'; prevMats.clear(); prevCli.clear(); return; }
+
+  $('tClientes').tBodies[0].innerHTML = sel.map(c =>
+    `<tr class="${prevCli.has(c.id)?'':'new'}"><td class="code">${esc(c.id)}</td><td>${esc(c.name)}</td><td>${badge(c.route)}</td></tr>`).join('');
+  $('tMat').tBodies[0].innerHTML = mats.map(m =>
+    `<tr class="${prevMats.has(m.mat)?'':'new'}"><td class="code">${esc(m.mat)}</td><td>${esc(m.desc)}</td><td class="num qty">${fmt(m.cjas)}</td></tr>`).join('') +
+    `<tr class="total"><td>Total general</td><td></td><td class="num">${fmt(total)}</td></tr>`;
+  $('hCli').textContent = `${sel.length} cliente${sel.length>1?'s':''}`;
+  $('hMat').textContent = `${mats.length} materiales · ${fmt(total)} cajas`;
+  $('summary').textContent = fechaPla ? `Hoja de ruta del ${fechaPla}` : '';
+  prevCli = new Set(sel.map(c => c.id)); prevMats = new Set(mats.map(m => m.mat));
+}
+
+const animState = {};
+function animateNum(id, to){
+  const el = $(id), from = animState[id] || 0; animState[id] = to;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || from === to){ el.textContent = fmt(to); return; }
+  const t0 = performance.now(), d = 450;
+  const step = t => { const p = Math.min(1,(t-t0)/d), e = 1-Math.pow(1-p,3);
+    el.textContent = fmt(Math.round(from + (to-from)*e)); if (p<1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+
+// ---------- Copiar con formato (para pegar en Excel) ----------
+const XL = {
+  font:"font-family:Calibri,Arial,sans-serif;font-size:11pt;",
+  th:"background:#13294B;color:#FFFFFF;font-weight:bold;border:1px solid #13294B;padding:4px 8px;",
+  td:"border:1px solid #DCE3EE;padding:3px 8px;color:#16233A;",
+  zebra:"background:#F6F8FC;",
+  code:"font-weight:bold;color:#1E4A80;mso-number-format:'\\@';",
+  total:"background:#F2A900;color:#13294B;font-weight:bold;border:1px solid #F2A900;padding:4px 8px;"
+};
+function buildCopyHtml(){
+  const cell = (v, st, tag='td') => `<${tag} style="${XL.font}${st}">${esc(v)}</${tag}>`;
+  let h = `<table style="border-collapse:collapse"><tr>${cell('IDCli',XL.th,'th')}${cell('Cliente',XL.th,'th')}</tr>`;
+  lastCli.forEach((c,i) => { const z = i%2 ? XL.zebra : '';
+    h += `<tr>${cell(c.id, XL.td+z+XL.code)}${cell(c.name, XL.td+z)}</tr>`; });
+  h += `</table><br><table style="border-collapse:collapse"><tr>${cell('IDMat',XL.th,'th')}${cell('Material',XL.th,'th')}${cell('Suma de Cjas',XL.th+'text-align:right;','th')}</tr>`;
+  lastMat.forEach((m,i) => { const z = i%2 ? XL.zebra : '';
+    h += `<tr>${cell(m.mat, XL.td+z+XL.code)}${cell(m.desc, XL.td+z)}${cell(m.cjas, XL.td+z+'text-align:right;font-weight:bold;')}</tr>`; });
+  h += `<tr>${cell('Total general',XL.total)}${cell('',XL.total)}${cell(lastTotal,XL.total+'text-align:right;')}</tr></table>`;
+  return `<html><head><meta charset="utf-8"></head><body>${h}</body></html>`;
+}
+function buildCopyText(){
+  return ['IDCli\tCliente', ...lastCli.map(c => `${c.id}\t${c.name}`), '',
+    'IDMat\tMaterial\tSuma de Cjas', ...lastMat.map(m => `${m.mat}\t${m.desc}\t${m.cjas}`),
+    `Total general\t\t${lastTotal}`].join('\n');
+}
+$('btnCopy').onclick = async () => {
+  const html = buildCopyHtml(), text = buildCopyText();
+  try{
+    if (!window.ClipboardItem || !navigator.clipboard || !navigator.clipboard.write) throw 0;
+    await navigator.clipboard.write([new ClipboardItem({
+      'text/html': new Blob([html], {type:'text/html'}),
+      'text/plain': new Blob([text], {type:'text/plain'})
+    })]);
+    toast('📋 Tablas copiadas con formato. Pégalas en Excel.');
+  }catch{
+    // Respaldo: copia desde un bloque oculto con el formato aplicado
+    const div = document.createElement('div');
+    div.style.cssText = 'position:fixed;left:-9999px;top:0;background:#fff';
+    div.innerHTML = html.replace(/^.*<body>|<\/body>.*$/g,'');
+    document.body.appendChild(div);
+    const range = document.createRange(); range.selectNodeContents(div);
+    const s = getSelection(); s.removeAllRanges(); s.addRange(range);
+    let ok = false; try{ ok = document.execCommand('copy'); }catch{}
+    s.removeAllRanges(); div.remove();
+    ok ? toast('📋 Tablas copiadas con formato. Pégalas en Excel.') : toast('El navegador bloqueó la copia. Usa "Descargar Excel".', true);
+  }
+};
+
+// ---------- Descargar Excel (con colores si la librería de estilos cargó) ----------
+let downloads = null;
+if (window.claude && typeof window.claude.use === 'function'){
+  window.claude.use('downloads').then(d => { downloads = d; }).catch(() => {});
+}
+$('btnXlsx').onclick = async () => {
+  const aoa = [['IDCli','Cliente'], ...lastCli.map(c => [c.id, c.name]), [], [],
+    ['IDMat','Material','Suma de Cjas'], ...lastMat.map(m => [m.mat, m.desc, m.cjas]),
+    ['Total general','', lastTotal]];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{wch:14},{wch:44},{wch:14}];
+  const B = {style:'thin', color:{rgb:'DCE3EE'}}, border = {top:B,bottom:B,left:B,right:B};
+  const sHead = {fill:{fgColor:{rgb:'13294B'}}, font:{bold:true,color:{rgb:'FFFFFF'},name:'Calibri',sz:11}, border};
+  const sCode = z => ({font:{bold:true,color:{rgb:'1E4A80'}}, border, ...(z?{fill:{fgColor:{rgb:'F6F8FC'}}}:{})});
+  const sTxt  = z => ({border, ...(z?{fill:{fgColor:{rgb:'F6F8FC'}}}:{})});
+  const sTot  = {fill:{fgColor:{rgb:'F2A900'}}, font:{bold:true,color:{rgb:'13294B'}}, border};
+  const set = (r,c,s) => { const a = XLSX.utils.encode_cell({r,c}); if (ws[a]) ws[a].s = s; else ws[a] = {t:'s', v:'', s}; };
+  set(0,0,sHead); set(0,1,sHead);
+  lastCli.forEach((_,i) => { set(i+1,0,sCode(i%2)); set(i+1,1,sTxt(i%2)); });
+  const m0 = lastCli.length + 3;
+  [0,1,2].forEach(c => set(m0,c,{...sHead, ...(c===2?{alignment:{horizontal:'right'}}:{})}));
+  lastMat.forEach((_,i) => { set(m0+1+i,0,sCode(i%2)); set(m0+1+i,1,sTxt(i%2)); set(m0+1+i,2,{...sTxt(i%2), font:{bold:true}}); });
+  [0,1,2].forEach(c => set(m0+1+lastMat.length, c, sTot));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Desplanificación');
+  const buf = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+  const name = 'desplanificacion' + (fechaPla ? '_' + fechaPla.replace(/\//g,'-') : '') + '.xlsx';
+  if (downloads){
+    try{ await downloads.save({filename:name, data:new Blob([buf])}); toast('⬇️ Excel descargado'); }
+    catch(err){ if (err && err.code !== 'declined') toast('No se pudo descargar. Usa "Copiar tablas".', true); }
+  } else {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+    a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    toast('⬇️ Excel descargado');
+  }
+};
+
+// ---------- Vista PC / celular ----------
+function setView(v, save){
+  document.body.classList.toggle('view-mobile', v === 'mobile');
+  document.body.classList.toggle('view-pc', v === 'pc');
+  $('vPc').setAttribute('aria-pressed', v === 'pc');
+  $('vMob').setAttribute('aria-pressed', v === 'mobile');
+  if (save){ try{ localStorage.setItem('despl-vista', v); }catch{} }
+}
+function setTab(t){
+  $('paneSel').classList.toggle('active', t === 'sel');
+  $('paneOut').classList.toggle('active', t === 'out');
+  $('tabSel').setAttribute('aria-selected', t === 'sel');
+  $('tabOut').setAttribute('aria-selected', t === 'out');
+  window.scrollTo({top:0});
+}
+$('vPc').onclick = () => setView('pc', true);
+$('vMob').onclick = () => setView('mobile', true);
+$('tabSel').onclick = () => setTab('sel');
+$('tabOut').onclick = () => setTab('out');
+(function(){
+  let v = null; try{ v = localStorage.getItem('despl-vista'); }catch{}
+  setView(v || (window.innerWidth < 860 ? 'mobile' : 'pc'), false);
+})();
+
+// ---------- Utilidades ----------
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmt(n){ return Number.isInteger(n) ? n.toLocaleString('es-PE') : n.toLocaleString('es-PE',{maximumFractionDigits:2}); }
+let tt; function toast(msg, err){ const t=$('toast'); t.textContent=msg; t.classList.toggle('err', !!err); t.classList.add('show'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('show'),2800); }
+</script>
+</body>
+</html>
